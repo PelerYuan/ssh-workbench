@@ -1,0 +1,35 @@
+services:
+  ssh-workbench:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: ssh-workbench:latest
+    container_name: ssh-workbench
+    restart: unless-stopped
+    # Host mode is intentional: the service must reach SSH targets on the
+    # deployment host's LAN. Do not add a ports: section with host networking.
+    network_mode: host
+    env_file:
+      - path: ${ENV_FILE:-.env}
+        required: true
+    environment:
+      NODE_ENV: production
+      DATA_DIR: /app/data
+    volumes:
+      - ssh-workbench-data:/app/data
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - >-
+          fetch('http://127.0.0.1:'+(process.env.PORT||5234)+'/api/health')
+          .then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))
+      interval: 30s
+      timeout: 5s
+      start_period: 20s
+      retries: 3
+
+volumes:
+  ssh-workbench-data:
+    name: ssh-workbench-data

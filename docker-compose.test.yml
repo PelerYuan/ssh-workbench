@@ -1,0 +1,19 @@
+services:
+  ssh-test-target:
+    build:
+      context: tests/fixtures/ssh-server
+    image: ssh-workbench-test-sshd:local
+    container_name: ssh-workbench-test-target
+    restart: "no"
+    environment:
+      TEST_KEY_UID: ${TEST_KEY_UID:-1000}
+      TEST_KEY_GID: ${TEST_KEY_GID:-1000}
+    ports:
+      - "127.0.0.1:2222:22"
+    volumes:
+      - ./tests/.runtime/ssh:/fixture
+    healthcheck:
+      test: ["CMD-SHELL", "ssh-keyscan -T 2 -p 22 127.0.0.1 >/dev/null 2>&1"]
+      interval: 2s
+      timeout: 3s
+      retries: 20
