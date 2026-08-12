@@ -1,10 +1,8 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { FitAddon } from '@xterm/addon-fit';
 import { Terminal } from '@xterm/xterm';
-import { CircleAlert, CircleOff, LoaderCircle, RefreshCw, TerminalSquare } from 'lucide-react';
+import { CircleAlert, LoaderCircle, RefreshCw, TerminalSquare } from 'lucide-react';
 import type { TerminalSession } from '../types';
-import { applyOneShotModifiers, updateOneShotModifiers, type OneShotModifierAction, type OneShotModifiers } from '../terminalInput';
-import { VirtualKeys } from './VirtualKeys';
 import { SystemMonitor } from './SystemMonitor';
 
 interface TerminalViewProps {
@@ -20,40 +18,17 @@ export function TerminalView({ session, onStatus, onTerminate }: TerminalViewPro
   const socketRef = useRef<WebSocket | null>(null);
   const reconnectTimer = useRef<number | undefined>(undefined);
   const mounted = useRef(true);
-  const modifiersRef = useRef<OneShotModifiers>({ ctrl: false, alt: false });
   const fatalErrorRef = useRef(false);
   const connectedRef = useRef(false);
   const connectRef = useRef<(() => void) | null>(null);
   const [connection, setConnection] = useState<'connecting' | 'connected' | 'disconnected' | 'error'>('connecting');
   const [error, setError] = useState(session.lastError ?? '');
-  const [modifiers, setModifiers] = useState<OneShotModifiers>(modifiersRef.current);
-
-  const updateModifiers = useCallback((action: OneShotModifierAction) => {
-    const next = updateOneShotModifiers(modifiersRef.current, action);
-    modifiersRef.current = next;
-    setModifiers(next);
-  }, []);
 
   const sendData = useCallback((data: string) => {
-    if (!connectedRef.current) {
-      updateModifiers('clear');
-      return;
-    }
-    const payload = applyOneShotModifiers(data, modifiersRef.current.ctrl, modifiersRef.current.alt);
-    updateModifiers('clear');
     const socket = socketRef.current;
-    if (socket?.readyState === WebSocket.OPEN) socket.send(JSON.stringify({ type: 'input', data: payload }));
+    if (socket?.readyState === WebSocket.OPEN) socket.send(JSON.stringify({ type: 'input', data }));
     terminalRef.current?.focus();
-  }, [updateModifiers]);
-
-  const toggleModifier = (modifier: 'ctrl' | 'alt') => {
-    if (!connectedRef.current) {
-      updateModifiers('clear');
-      return;
-    }
-    updateModifiers(modifier === 'ctrl' ? 'toggleCtrl' : 'toggleAlt');
-    terminalRef.current?.focus();
-  };
+  }, []);
 
   const fitAndResize = useCallback(() => {
     const terminal = terminalRef.current;
@@ -224,10 +199,6 @@ export function TerminalView({ session, onStatus, onTerminate }: TerminalViewPro
     };
   }, [fitAndResize, onStatus, session.id]);
 
-  useEffect(() => {
-    if (connection !== 'connected') updateModifiers('clear');
-  }, [connection, updateModifiers]);
-
   const retry = () => {
     if (reconnectTimer.current) {
       window.clearTimeout(reconnectTimer.current);
@@ -247,13 +218,10 @@ export function TerminalView({ session, onStatus, onTerminate }: TerminalViewPro
       <div className="terminal-toolbar">
         <div className="terminal-title">
           <span className={`status-dot status-dot--${connection}`} aria-hidden="true" />
-          <div>
-            <strong>{session.title}</strong>
-            <span>{session.sourceName} · {statusText}</span>
-          </div>
+          <span className="terminal-status">{statusText}</span>
+          <span className="session-tmux" title={session.tmuxName}><TerminalSquare size={15} /> {session.tmuxName}</span>
         </div>
         <div className="terminal-actions">
-          <span className="session-tmux" title={session.tmuxName}><TerminalSquare size={15} /> {session.tmuxName}</span>
           {!connected && <button className="icon-button" type="button" onClick={retry} aria-label="重新连接" title="重新连接"><RefreshCw size={17} /></button>}
         </div>
       </div>
@@ -268,13 +236,6 @@ export function TerminalView({ session, onStatus, onTerminate }: TerminalViewPro
           </div>
         )}
       </div>
-      <VirtualKeys
-        ctrl={modifiers.ctrl}
-        alt={modifiers.alt}
-        disabled={!connected}
-        onModifier={toggleModifier}
-        onData={sendData}
-      />
     </section>
   );
 }

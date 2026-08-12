@@ -575,7 +575,8 @@ button:disabled {
   display: flex;
   min-width: 0;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
+  flex: 1;
 }
 
 .terminal-title > div {
@@ -627,7 +628,13 @@ button:disabled {
   display: flex;
   min-width: 0;
   align-items: center;
-  gap: 4px;
+  gap: 8px;
+}
+
+.terminal-status {
+  color: var(--muted);
+  font-size: 10px;
+  white-space: nowrap;
 }
 
 .session-tmux {
@@ -636,7 +643,6 @@ button:disabled {
   min-width: 0;
   align-items: center;
   gap: 6px;
-  margin-right: 5px;
   overflow: hidden;
   color: var(--subtle);
   font-family: "SFMono-Regular", Consolas, monospace;
@@ -1375,7 +1381,7 @@ button:disabled {
   }
 
   .terminal-view {
-    grid-template-rows: 45px minmax(0, 1fr) calc(88px + env(safe-area-inset-bottom));
+    grid-template-rows: auto 45px minmax(0, 1fr);
   }
 
   .terminal-toolbar {
@@ -1392,6 +1398,10 @@ button:disabled {
 
   .terminal-title span:not(.status-dot) {
     font-size: 9.5px;
+  }
+
+  .terminal-status {
+    display: none;
   }
 
   .session-tmux {
