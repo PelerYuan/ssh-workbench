@@ -164,7 +164,12 @@ def main():
             app_password = gen_pw
             print(f"  Generated: {app_password}")
         else:
-            app_password = ask("  Password (min 8 chars)", validator=validate_password, secret=True)
+            while True:
+                app_password = ask("  Password (min 8 chars)", validator=validate_password, secret=True)
+                confirm_password = ask("  Confirm password", secret=True)
+                if app_password == confirm_password:
+                    break
+                print("  ✗ Passwords do not match. Please try again.")
 
         # 3. Encryption key
         print()
@@ -176,7 +181,12 @@ def main():
             enc_key = gen_key
             print(f"  Generated: {enc_key}")
         else:
-            enc_key = ask("  Key (min 32 chars)", validator=validate_enc_key, secret=True)
+            while True:
+                enc_key = ask("  Key (min 32 chars)", validator=validate_enc_key, secret=True)
+                confirm_key = ask("  Confirm key", secret=True)
+                if enc_key == confirm_key:
+                    break
+                print("  ✗ Keys do not match. Please try again.")
 
         # 4. HTTPS / COOKIE_SECURE
         print()
