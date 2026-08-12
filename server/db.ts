@@ -50,7 +50,19 @@ db.exec(`
   CREATE INDEX IF NOT EXISTS idx_auth_expiry ON auth_sessions(expires_at);
 `);
 
+const allowedTables = new Set(['ssh_sources', 'terminal_sessions', 'auth_sessions', 'settings']);
+const allowedColumns = new Set(['updated_at', 'last_error']);
+
 function ensureColumn(table: string, column: string, definition: string): void {
+  if (!allowedTables.has(table)) {
+    throw new Error(`Table ${table} is not in the allowed list`);
+  }
+  if (!allowedColumns.has(column)) {
+    throw new Error(`Column ${column} is not in the allowed list`);
+  }
+  if (!/^[a-z_]+$/.test(table) || !/^[a-z_]+$/.test(column)) {
+    throw new Error('Invalid table or column name');
+  }
   const columns = db.prepare(`PRAGMA table_info(${table})`).all() as Array<{ name: string }>;
   if (!columns.some((item) => item.name === column)) {
     db.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`);
@@ -74,13 +86,16 @@ if (!passwordHash || !bcrypt.compareSync(config.appPassword, passwordHash.value)
     db.prepare(`
       INSERT INTO settings(key, value) VALUES ('password_hash', ?)
       ON CONFLICT(key) DO UPDATE SET value = excluded.value
-    `).run(bcrypt.hashSync(config.appPassword, 12));
+    `).run(bcrypt.hashSync(config.appPassword, 14));
     db.prepare('DELETE FROM auth_sessions').run();
   });
   replacePassword();
 }
 
 db.prepare('DELETE FROM auth_sessions WHERE expires_at <= ?').run(Date.now());
+
+// Check for encryption key mismatches on startup
+import('./keyMigration.js').then(({ logKeyWarning }) => logKeyWarning()).catch(() => {});
 
 export type PasswordCredential = { password: string };
 export type PrivateKeyCredential = { privateKey: string; passphrase?: string };

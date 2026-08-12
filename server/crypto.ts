@@ -4,7 +4,9 @@ import { config } from './config.js';
 const VERSION = 'v1';
 
 export function encrypt(value: unknown): string {
+  // Generate IV: 12 bytes fully random for cryptographic uniqueness
   const iv = randomBytes(12);
+
   const cipher = createCipheriv('aes-256-gcm', config.encryptionKey, iv);
   const ciphertext = Buffer.concat([cipher.update(JSON.stringify(value), 'utf8'), cipher.final()]);
   return [VERSION, iv, cipher.getAuthTag(), ciphertext]

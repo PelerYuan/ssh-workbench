@@ -204,6 +204,30 @@ export function App() {
       : session));
   }, []);
 
+  const sessionTabsRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    const nav = sessionTabsRef.current;
+    if (!nav) return;
+
+    const updateScrollIndicators = () => {
+      const canScrollLeft = nav.scrollLeft > 0;
+      const canScrollRight = nav.scrollLeft < nav.scrollWidth - nav.clientWidth - 1;
+      nav.classList.toggle('has-scroll-left', canScrollLeft);
+      nav.classList.toggle('has-scroll-right', canScrollRight);
+    };
+
+    updateScrollIndicators();
+    nav.addEventListener('scroll', updateScrollIndicators);
+    const observer = new ResizeObserver(updateScrollIndicators);
+    observer.observe(nav);
+
+    return () => {
+      nav.removeEventListener('scroll', updateScrollIndicators);
+      observer.disconnect();
+    };
+  }, [activeSessions.length]);
+
   if (authState === 'checking') return <LoadingScreen label="正在连接工作台" />;
   if (authState === 'unavailable') return <UnavailableScreen error={initialError} />;
   if (authState === 'anonymous') return <LoginScreen onAuthenticated={() => setAuthState('authenticated')} />;
@@ -229,7 +253,7 @@ export function App() {
       <main ref={workspaceRef} className={`workspace ${activeSessions.length > 0 ? 'workspace--with-tabs' : ''}`}>
         <MobileHeader onMenu={() => setDrawerOpen(true)} onNewSession={() => openSessionDialog()} canCreate={sources.length > 0} />
         {activeSessions.length > 0 && (
-          <nav className="session-tabs" aria-label="Active sessions">
+          <nav ref={sessionTabsRef} className="session-tabs" aria-label="Active sessions">
             {activeSessions.map((session) => (
               <div className={`session-tab ${session.id === activeSessionId ? 'is-active' : ''}`} key={session.id}>
                 <button className="session-tab__main" type="button" onClick={() => setActiveSessionId(session.id)}>

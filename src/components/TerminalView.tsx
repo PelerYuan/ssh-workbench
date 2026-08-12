@@ -4,6 +4,7 @@ import { Terminal } from '@xterm/xterm';
 import { CircleAlert, LoaderCircle, RefreshCw, TerminalSquare } from 'lucide-react';
 import type { TerminalSession } from '../types';
 import { SystemMonitor } from './SystemMonitor';
+import { VirtualKeys } from './VirtualKeys';
 
 interface TerminalViewProps {
   session: TerminalSession;
@@ -23,6 +24,8 @@ export function TerminalView({ session, onStatus, onTerminate }: TerminalViewPro
   const connectRef = useRef<(() => void) | null>(null);
   const [connection, setConnection] = useState<'connecting' | 'connected' | 'disconnected' | 'error'>('connecting');
   const [error, setError] = useState(session.lastError ?? '');
+  const [ctrlActive, setCtrlActive] = useState(false);
+  const [altActive, setAltActive] = useState(false);
 
   const sendData = useCallback((data: string) => {
     const socket = socketRef.current;
@@ -209,6 +212,26 @@ export function TerminalView({ session, onStatus, onTerminate }: TerminalViewPro
     connectRef.current?.();
   };
 
+  const handleModifier = (modifier: 'ctrl' | 'alt') => {
+    if (modifier === 'ctrl') setCtrlActive((prev) => !prev);
+    else setAltActive((prev) => !prev);
+  };
+
+  const handleVirtualKeyData = (data: string) => {
+    let finalData = data;
+    if (ctrlActive) {
+      const char = data.charAt(0);
+      if (char >= 'a' && char <= 'z') finalData = String.fromCharCode(char.charCodeAt(0) - 96);
+      else if (char >= 'A' && char <= 'Z') finalData = String.fromCharCode(char.charCodeAt(0) - 64);
+      setCtrlActive(false);
+    }
+    if (altActive) {
+      finalData = `\x1b${data}`;
+      setAltActive(false);
+    }
+    sendData(finalData);
+  };
+
   const connected = connection === 'connected';
   const statusText = connection === 'connected' ? '已连接' : connection === 'connecting' ? '正在连接' : connection === 'disconnected' ? '连接已断开' : '连接异常';
 
@@ -217,11 +240,17 @@ export function TerminalView({ session, onStatus, onTerminate }: TerminalViewPro
       <SystemMonitor sessionId={session.id} />
       <div className="terminal-toolbar">
         <div className="terminal-title">
-          <span className={`status-dot status-dot--${connection}`} aria-hidden="true" />
-          <span className="terminal-status">{statusText}</span>
-          <span className="session-tmux" title={session.tmuxName}><TerminalSquare size={15} /> {session.tmuxName}</span>
+          <div>
+            <strong>{session.title}</strong>
+            <span>{session.sourceName}</span>
+          </div>
         </div>
         <div className="terminal-actions">
+          <div className="terminal-status-group">
+            <span className={`status-dot status-dot--${connection}`} aria-hidden="true" />
+            <span className="terminal-status">{statusText}</span>
+          </div>
+          <span className="session-tmux" title={session.tmuxName}><TerminalSquare size={15} /> {session.tmuxName}</span>
           {!connected && <button className="icon-button" type="button" onClick={retry} aria-label="重新连接" title="重新连接"><RefreshCw size={17} /></button>}
         </div>
       </div>
@@ -235,6 +264,7 @@ export function TerminalView({ session, onStatus, onTerminate }: TerminalViewPro
             {connection !== 'connecting' && <button className="button button--secondary" type="button" onClick={retry}><RefreshCw size={16} /> 重新连接</button>}
           </div>
         )}
+        <VirtualKeys ctrl={ctrlActive} alt={altActive} disabled={!connected} onModifier={handleModifier} onData={handleVirtualKeyData} />
       </div>
     </section>
   );

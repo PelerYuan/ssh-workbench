@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, type ReactNode } from 'react';
+import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
 import { X } from 'lucide-react';
 
 interface DialogProps {
@@ -15,6 +15,7 @@ export function Dialog({ title, description, children, footer, onClose, size = '
   const titleId = useId();
   const descriptionId = useId();
   const dialogRef = useRef<HTMLElement>(null);
+  const [keyboardVisible, setKeyboardVisible] = useState(false);
 
   useEffect(() => {
     const previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
@@ -48,6 +49,26 @@ export function Dialog({ title, description, children, footer, onClose, size = '
       }
     };
     document.addEventListener('keydown', onKeyDown);
+
+    // Detect virtual keyboard on mobile
+    if (typeof window !== 'undefined' && 'visualViewport' in window && window.visualViewport) {
+      const viewport = window.visualViewport;
+      const handleResize = () => {
+        const heightDifference = window.innerHeight - viewport.height;
+        setKeyboardVisible(heightDifference > 150);
+      };
+      viewport.addEventListener('resize', handleResize);
+      viewport.addEventListener('scroll', handleResize);
+      handleResize();
+      return () => {
+        window.cancelAnimationFrame(frame);
+        document.removeEventListener('keydown', onKeyDown);
+        viewport.removeEventListener('resize', handleResize);
+        viewport.removeEventListener('scroll', handleResize);
+        previousFocus?.focus();
+      };
+    }
+
     return () => {
       window.cancelAnimationFrame(frame);
       document.removeEventListener('keydown', onKeyDown);
@@ -61,7 +82,7 @@ export function Dialog({ title, description, children, footer, onClose, size = '
     }}>
       <section
         ref={dialogRef}
-        className={`dialog dialog--${size}`}
+        className={`dialog dialog--${size} ${keyboardVisible ? 'dialog--keyboard-visible' : ''}`}
         role="dialog"
         tabIndex={-1}
         aria-modal="true"

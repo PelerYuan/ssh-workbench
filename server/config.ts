@@ -1,4 +1,4 @@
-import { createHash } from 'node:crypto';
+import { pbkdf2Sync } from 'node:crypto';
 import path from 'node:path';
 
 function requiredSecret(name: string, minimumLength: number): string {
@@ -49,7 +49,7 @@ export const config = Object.freeze({
   port: integerSetting('PORT', 5234, 1, 65_535),
   dataDir: path.resolve(process.env.DATA_DIR ?? 'data'),
   appPassword,
-  encryptionKey: createHash('sha256').update(encryptionSecret, 'utf8').digest(),
+  encryptionKey: pbkdf2Sync(encryptionSecret, 'ssh-workbench-v1', 100_000, 32, 'sha256'),
   cookieSecure: process.env.COOKIE_SECURE === 'true',
   allowedOrigins,
   trustProxy,

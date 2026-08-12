@@ -31,7 +31,23 @@ function publicSource(source: SourceRow) {
     credential = decrypt<Credential>(source.credential);
   } catch (error) {
     console.error(`Could not inspect credential for source ${source.id}`, error);
-    throw new AppError(500, 'CREDENTIAL_DECRYPTION_FAILED', '无法解密已保存的 SSH 凭据');
+    // Return a safe placeholder instead of throwing - allows UI to show the source
+    // but marks it as having corrupted credentials
+    return {
+      id: source.id,
+      name: source.name,
+      host: source.host,
+      port: source.port,
+      username: source.username,
+      authType: source.auth_type,
+      hasPassword: false,
+      hasPrivateKey: false,
+      hasPassphrase: false,
+      hostFingerprint: source.host_fingerprint,
+      createdAt: source.created_at,
+      updatedAt: source.updated_at,
+      isCorrupted: true,
+    };
   }
   return {
     id: source.id,
@@ -186,4 +202,22 @@ sourceRouter.post('/:id/trust', asyncRoute(async (request, response) => {
   } finally {
     releaseSource();
   }
+}));
+
+sourceRouter.delete('/corrupted', asyncRoute(async (_request, response) => {
+  const sources = listSources();
+  const deleted: string[] = [];
+
+  for (const source of sources) {
+    try {
+      decrypt<Credential>(source.credential);
+    } catch {
+      if (!sourceHasActiveSessions(source.id) && !sourceConnectionUsePending(source.id)) {
+        deleteSource(source.id);
+        deleted.push(source.id);
+      }
+    }
+  }
+
+  response.json({ deleted, count: deleted.length });
 }));

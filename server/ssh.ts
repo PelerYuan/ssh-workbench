@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto';
 import { Client, type ClientChannel, type ConnectConfig } from 'ssh2';
+import { quote } from 'shell-quote';
 import { config } from './config.js';
 import { decrypt } from './crypto.js';
 import type { SourceRow } from './db.js';
@@ -279,7 +280,7 @@ export async function verifyTmuxSession(source: SourceRow, tmuxName: string): Pr
   assertTmuxName(tmuxName);
   const client = await connect(source);
   try {
-    const result = await execCollect(client, `tmux has-session -t ${tmuxName}`);
+    const result = await execCollect(client, `tmux has-session -t ${quote([tmuxName])}`);
     return result.code === 0;
   } finally {
     client.end();
@@ -290,7 +291,7 @@ export async function createTmuxSession(source: SourceRow, tmuxName: string): Pr
   assertTmuxName(tmuxName);
   const client = await connect(source);
   try {
-    const result = await execCollect(client, `tmux new-session -d -s ${tmuxName}`);
+    const result = await execCollect(client, `tmux new-session -d -s ${quote([tmuxName])}`);
     if (result.code !== 0) {
       const detail = result.stderr.trim().slice(0, 500);
       throw new AppError(502, 'TMUX_CREATE_FAILED', '无法创建远程 tmux 会话', detail ? { stderr: detail } : undefined);
@@ -304,7 +305,7 @@ export async function terminateTmuxSession(source: SourceRow, tmuxName: string):
   assertTmuxName(tmuxName);
   const client = await connect(source);
   try {
-    const result = await execCollect(client, `tmux kill-session -t ${tmuxName}`);
+    const result = await execCollect(client, `tmux kill-session -t ${quote([tmuxName])}`);
     if (result.code !== 0 && !/can't find session|no server running/i.test(`${result.stdout}\n${result.stderr}`)) {
       throw new AppError(502, 'TMUX_TERMINATE_FAILED', '无法终止远程 tmux 会话');
     }
@@ -343,7 +344,7 @@ export async function attachTmuxSession(
     client.once('error', onClientError);
     client.once('close', onClientClose);
     client.exec(
-      `tmux attach-session -t ${tmuxName}`,
+      `tmux attach-session -t ${quote([tmuxName])}`,
       { pty: { term: 'xterm-256color', cols: columns, rows } },
       (error, stream) => {
         if (error) {

@@ -130,15 +130,15 @@ export function Sidebar({
               )}
               {sources.map((source) => (
                 <article className="source-row" key={source.id}>
-                  <button className="source-row__main" type="button" onClick={() => onNewSession(source)} title={`${t('connecting')} ${source.name}`}>
+                  <button className="source-row__main" type="button" onClick={() => onNewSession(source)} title={`${t('connecting')} ${source.name}`} disabled={source.isCorrupted}>
                     <span className="source-icon"><Server size={16} /></span>
                     <span className="source-copy">
-                      <strong>{source.name}</strong>
+                      <strong>{source.name}{source.isCorrupted && ' ⚠️'}</strong>
                       <span>{source.username}@{source.host}:{source.port}</span>
                     </span>
                   </button>
                   <div className="source-actions">
-                    <button className="icon-button icon-button--small" type="button" onClick={() => onTestSource(source)} disabled={busySourceId === source.id} aria-label={`${t('test')} ${source.name}`} title={t('test')}>
+                    <button className="icon-button icon-button--small" type="button" onClick={() => onTestSource(source)} disabled={busySourceId === source.id || source.isCorrupted} aria-label={`${t('test')} ${source.name}`} title={t('test')}>
                       {busySourceId === source.id ? <Ellipsis className="pulse" size={15} /> : <ShieldCheck size={15} />}
                     </button>
                     <button className="icon-button icon-button--small" type="button" onClick={() => onEditSource(source)} aria-label={`${t('edit')} ${source.name}`} title={t('edit')}><Pencil size={15} /></button>

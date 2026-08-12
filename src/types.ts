@@ -13,6 +13,7 @@ export interface SshSource {
   hostFingerprint: string | null;
   createdAt: number;
   updatedAt: number;
+  isCorrupted?: boolean;
 }
 
 export interface SourceInput {
