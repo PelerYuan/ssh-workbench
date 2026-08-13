@@ -30,8 +30,8 @@
   "dependencies": {
     "@xterm/addon-fit": "^0.10.0",
     "@xterm/xterm": "^5.5.0",
-    "better-sqlite3": "^11.8.1",
     "bcryptjs": "^3.0.2",
+    "better-sqlite3": "^13.0.3",
     "cookie-parser": "^1.4.7",
     "express": "^4.21.2",
     "express-rate-limit": "^7.5.0",
@@ -54,6 +54,7 @@
     "@types/ws": "^8.5.13",
     "@vitejs/plugin-react": "^4.3.4",
     "concurrently": "^9.1.2",
+    "playwright": "^1.62.1",
     "tsx": "^4.19.2",
     "typescript": "^5.7.2",
     "vite": "^6.0.7",

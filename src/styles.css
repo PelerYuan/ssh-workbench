@@ -1527,7 +1527,7 @@ button:disabled {
   }
 
   .session-tabs {
-    height: 36px;
+    height: 44px;
   }
 
   .session-tab {
@@ -1544,6 +1544,7 @@ button:disabled {
 
   .session-tab__terminate {
     width: 44px;
+    height: 44px;
   }
 
   .session-tabs button .session-terminate {
@@ -1570,7 +1571,7 @@ button:disabled {
   .virtual-keys {
     display: grid;
     min-width: 0;
-    height: calc(88px + env(safe-area-inset-bottom));
+    height: calc(102px + env(safe-area-inset-bottom));
     padding: 5px max(4px, env(safe-area-inset-right)) max(5px, env(safe-area-inset-bottom)) max(4px, env(safe-area-inset-left));
     grid-template-rows: repeat(2, minmax(0, 1fr));
     gap: 4px;
